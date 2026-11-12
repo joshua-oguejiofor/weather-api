@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Severe Weather Alert{% endblock %}
+
+{% block content %}
+
+  <h2 style="color: #333f33;">⚠️Severe Weather Alert</h2>
+
+  <p>Hi {{ first_name }},</p>
+    <p><strong>City:</strong> {{ city }}</p>
+    <p><strong>Event:</strong> {{ event }}</p>
+    <p><strong>Details:</strong> {{ description }}</p>
+    <p>Stay safe and take necessary precautions. <br>
+    <strong> Please take the necessary precautions!!.</strong></p>
+
+{% endblock %}

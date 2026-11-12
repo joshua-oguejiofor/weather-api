@@ -1,0 +1,10 @@
+.env
+.venv
+__pycache__
+note.txt
+weather-app.db
+.pytest_cache
+weather_test.db
+*.db
+
+

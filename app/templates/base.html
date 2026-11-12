@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Email{% endblock %}</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: rgb(127, 97, 97); padding: 20px;">
+
+  <div style="max-width: 500px; margin: auto; background: rgb(74, 74, 83); padding: 20px; border-radius: 8px;">
+
+
+    <!-- Child templates fill this part in -->
+    {% block content %}
+    <p>This is the default content.</p>
+    {% endblock %}
+
+    
+  </div>
+
+</body>
+</html>

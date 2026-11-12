@@ -1,0 +1,89 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: weather_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"  
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: weather_redis
+    ports:
+      - "6380:6379" # changed the port 
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  alembic:
+    build: .
+    container_name: alembic_migration
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: mysql+asyncmy://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      REDIS_URL: redis://redis:6379/0
+    env_file: .env                                
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: .
+    container_name: weather_api
+    ports:
+      - "8001:8000"
+    environment:
+      # Override .env values that must point at the compose services
+      DATABASE_URL: mysql+asyncmy://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      REDIS_URL: redis://redis:6379/0
+    env_file: 
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      alembic:
+        condition: service_completed_successfully
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: weather_worker
+    environment:
+      DATABASE_URL: mysql+asyncmy://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      REDIS_URL: redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      alembic:
+        condition: service_completed_successfully
+    command: celery -A app.celery_server.celery_instance.celery_app worker --loglevel=info
+    restart: unless-stopped
+
+
+volumes:
+  mysql_data:
+  redis_data:
